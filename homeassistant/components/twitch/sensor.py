@@ -23,6 +23,9 @@ ATTR_FOLLOWING = "followers"
 ATTR_VIEWS = "views"
 
 CONF_CHANNELS = "channels"
+CONF_SHOW_PREVIEWS = "show_previews"
+
+DEFAULT_SHOW_PREVIEWS = True
 
 ICON = "mdi:twitch"
 
@@ -34,6 +37,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
         vol.Required(CONF_CLIENT_ID): cv.string,
         vol.Required(CONF_CHANNELS): vol.All(cv.ensure_list, [cv.string]),
         vol.Optional(CONF_TOKEN): cv.string,
+        vol.Optional(CONF_SHOW_PREVIEWS, default=DEFAULT_SHOW_PREVIEWS): cv.boolean,
     }
 )
 
@@ -44,6 +48,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     client_id = config[CONF_CLIENT_ID]
     oauth_token = config.get(CONF_TOKEN)
     client = TwitchClient(client_id, oauth_token)
+    show_previews = config[CONF_SHOW_PREVIEWS]
 
     try:
         client.ingests.get_server_list()
@@ -57,7 +62,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
 
 class TwitchSensor(Entity):
-    """Representation of an Twitch channel."""
+    """Representation of a Twitch channel."""
 
     def __init__(self, channel, client):
         """Initialize the sensor."""
@@ -146,7 +151,11 @@ class TwitchSensor(Entity):
         if stream:
             self._game = stream.channel.get("game")
             self._title = stream.channel.get("status")
-            self._preview = stream.preview.get("medium")
+            if CONF_SHOW_PREVIEWS               # is dit de goede manier???????????
+                self._preview = stream.preview.get("medium")
+            else 
+                self._preview = self._channel.logo
+
             self._state = STATE_STREAMING
         else:
             self._preview = self._channel.logo
